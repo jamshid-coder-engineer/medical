@@ -1,13 +1,169 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
-  provider = "prisma-client"
-  output   = "../generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+}
+
+// ── ENUMS ──────────────────────────────────────
+
+enum Role {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum AppointmentStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum OtpPurpose {
+  REGISTER
+  LOGIN
+}
+
+// ── USER ───────────────────────────────────────
+
+model User {
+  id         String    @id @default(uuid())
+  phone      String    @unique
+  password   String?
+  role       Role      @default(PATIENT)
+  isVerified Boolean   @default(false)
+  isActive   Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  patient    Patient?
+  doctor     Doctor?
+  otps       Otp[]
+
+  @@map("users")
+}
+
+// ── OTP ────────────────────────────────────────
+
+model Otp {
+  id        String     @id @default(uuid())
+  userId    String
+  code      String
+  purpose   OtpPurpose
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime   @default(now())
+
+  user      User       @relation(fields: [userId], references: [id])
+
+  @@map("otps")
+}
+
+// ── PATIENT ────────────────────────────────────
+
+model Patient {
+  id          String    @id @default(uuid())
+  userId      String    @unique
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime?
+  gender      Gender?
+  address     String?
+  bloodType   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  user         User           @relation(fields: [userId], references: [id])
+  appointments Appointment[]
+  records      MedicalRecord[]
+
+  @@map("patients")
+}
+
+// ── DOCTOR ─────────────────────────────────────
+
+model Doctor {
+  id             String    @id @default(uuid())
+  userId         String    @unique
+  firstName      String
+  lastName       String
+  specialization String
+  licenseNumber  String    @unique
+  bio            String?
+  avatarUrl      String?
+  isAvailable    Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+
+  user         User             @relation(fields: [userId], references: [id])
+  appointments Appointment[]
+  records      MedicalRecord[]
+  schedules    DoctorSchedule[]
+
+  @@map("doctors")
+}
+
+// ── DOCTOR SCHEDULE ────────────────────────────
+
+model DoctorSchedule {
+  id        String  @id @default(uuid())
+  doctorId  String
+  dayOfWeek Int
+  startTime String
+  endTime   String
+  isActive  Boolean @default(true)
+
+  doctor    Doctor  @relation(fields: [doctorId], references: [id])
+
+  @@map("doctor_schedules")
+}
+
+// ── APPOINTMENT ────────────────────────────────
+
+model Appointment {
+  id          String            @id @default(uuid())
+  patientId   String
+  doctorId    String
+  scheduledAt DateTime
+  status      AppointmentStatus @default(PENDING)
+  reason      String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  patient     Patient           @relation(fields: [patientId], references: [id])
+  doctor      Doctor            @relation(fields: [doctorId], references: [id])
+  record      MedicalRecord?
+
+  @@map("appointments")
+}
+
+// ── MEDICAL RECORD ─────────────────────────────
+
+model MedicalRecord {
+  id            String       @id @default(uuid())
+  patientId     String
+  doctorId      String
+  appointmentId String?      @unique
+  diagnosis     String
+  prescription  String?
+  notes         String?
+  attachments   String[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  patient       Patient      @relation(fields: [patientId], references: [id])
+  doctor        Doctor       @relation(fields: [doctorId], references: [id])
+  appointment   Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@map("medical_records")
 }
