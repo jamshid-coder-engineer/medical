@@ -19,4 +19,10 @@ export const env = {
   JWT_EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '7d'),
 
   REDIS_URL: getEnv('REDIS_URL'),
+
+  MINIO_ENDPOINT: getEnv('MINIO_ENDPOINT', 'localhost'),
+  MINIO_PORT: parseInt(getEnv('MINIO_PORT', '9000')),
+  MINIO_ACCESS_KEY: getEnv('MINIO_ACCESS_KEY', 'minioadmin'),
+  MINIO_SECRET_KEY: getEnv('MINIO_SECRET_KEY', 'minioadmin123'),
+  MINIO_BUCKET: getEnv('MINIO_BUCKET', 'medical-files'),
 } as const;
